@@ -6,6 +6,8 @@ import (
 
 	"net/http"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/pivotal-cf/brokerapi"
 )
 
@@ -14,8 +16,8 @@ type minioBroker struct{}
 func (b *minioBroker) Services(context context.Context) []brokerapi.Service {
 	return []brokerapi.Service{
 		brokerapi.Service{
-			ID:          "minio simple broker id",
-			Name:        "minio simple broker name",
+			ID:          "minio-kris-service-id",
+			Name:        "minio-kris-service-name",
 			Description: "minio simple broker description",
 			Bindable:    false,
 			Plans: []brokerapi.ServicePlan{{
@@ -54,6 +56,18 @@ func (b *minioBroker) LastOperation(context context.Context, instanceID, operati
 }
 
 func main() {
-	handler := brokerapi.New(&minioBroker{}, nil, brokerapi.BrokerCredentials{os.Getenv("SECURITY_USER_NAME"), os.Getenv("SECURITY_USER_PASSWORD")})
-	http.ListenAndServe(":8080", handler)
+	username := os.Getenv("SECURITY_USER_NAME")
+	password := os.Getenv("SECURITY_USER_PASSWORD")
+	port := os.Getenv("PORT")
+	if username == "" {
+		username = "minio"
+	}
+	if password == "" {
+		password = "minio123"
+	}
+	if port == "" {
+		port = "8080"
+	}
+	handler := brokerapi.New(&minioBroker{}, lager.NewLogger("minio-broker"), brokerapi.BrokerCredentials{username, password})
+	http.ListenAndServe(":"+port, handler)
 }
